@@ -107,20 +107,20 @@ export default class TabViewAnimated<T: Route<*>>
 
   componentDidMount() {
     this._mounted = true;
-    this._positionListener = this.state.position.addListener(
-      this._trackPosition,
+    this._offsetXListener = this.state.offsetX.addListener(
+      this._trackOffsetX,
     );
   }
 
   componentWillUnmount() {
     this._mounted = false;
-    this.state.position.removeListener(this._positionListener);
+    this.state.offsetX.removeListener(this._offsetXListener);
   }
 
   _mounted: boolean = false;
   _nextIndex: ?number;
   _lastPosition: ?number;
-  _positionListener: string;
+  _offsetXListener: string;
   _subscriptions: { [key: SubscriptionName]: Array<Function> } = {};
 
   _renderScene = (props: SceneRendererProps<T> & Scene<T>) => {
@@ -156,13 +156,14 @@ export default class TabViewAnimated<T: Route<*>>
     }
   };
 
-  _trackPosition = (e: { value: number }) => {
-    this._handleChangePosition(e.value);
-    this._triggerEvent('position', e.value);
-    this._lastPosition = e.value;
+  _trackOffsetX = (e: { value: number }) => {
+    const value = value / this.state.layout.width;
+    this._handleChangePosition(value);
+    this._triggerEvent('position', value);
+    this._lastPosition = value;
     const { onChangePosition } = this.props;
     if (onChangePosition) {
-      onChangePosition(e.value);
+      onChangePosition(value);
     }
   };
 
@@ -188,9 +189,9 @@ export default class TabViewAnimated<T: Route<*>>
       e.nativeEvent.layout
     );
 
-    this.state.position.removeListener(this._positionListener);
-    this._positionListener = position.addListener(
-      this._trackPosition,
+    this.state.offsetX.removeListener(this._offsetXListener);
+    this._offsetXListener = offsetX.addListener(
+      this._trackOffsetX,
     );
 
     this.setState({
