@@ -29,7 +29,8 @@ export type SceneRendererProps<T> = {
     measured: boolean,
   },
   navigationState: NavigationState<T>,
-  position: Animated.Value,
+  offsetX: Animated.Value,
+  position: any,
   jumpToIndex: (index: number) => void,
   getLastPosition: () => number,
   subscribe: (

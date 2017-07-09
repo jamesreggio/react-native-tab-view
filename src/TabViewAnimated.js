@@ -88,13 +88,18 @@ export default class TabViewAnimated<T: Route<*>>
   constructor(props: Props<T>) {
     super(props);
 
+    const { offsetX, position } = this._buildAnimatedValues(
+      this.props.initialLayout
+    );
+
     this.state = {
       loaded: [this.props.navigationState.index],
       layout: {
         ...this.props.initialLayout,
         measured: false,
       },
-      position: new Animated.Value(this.props.navigationState.index),
+      offsetX,
+      position,
     };
   }
 
@@ -102,9 +107,6 @@ export default class TabViewAnimated<T: Route<*>>
 
   componentDidMount() {
     this._mounted = true;
-    this._positionListener = this.state.position.addListener(
-      this._trackPosition,
-    );
   }
 
   componentWillUnmount() {
@@ -179,19 +181,42 @@ export default class TabViewAnimated<T: Route<*>>
       return;
     }
 
+    const { offsetX, position } = this._buildAnimatedValues(
+      e.nativeEvent.layout
+    );
+
     this.setState({
       layout: {
         measured: true,
         height,
         width,
+        offsetX,
+        position,
       },
     });
+  };
+
+  _buildAnimatedValues = (layout) => {
+    const { index } = this.props.navigationState;
+    const width = layout ? layout.width : 0;
+    const offsetX = new Animated.Value(index * width);
+    const position = Animated.divide(offsetX, width);
+
+    if (this.state.position) {
+      this.state.position.removeListener(this._positionListener);
+    }
+    this._positionListener = position.addListener(
+      this._trackPosition,
+    );
+
+    return { offsetX, position };
   };
 
   _buildSceneRendererProps = (): SceneRendererProps<*> => {
     return {
       layout: this.state.layout,
       navigationState: this.props.navigationState,
+      offsetX: this.state.offsetX,
       position: this.state.position,
       jumpToIndex: this._jumpToIndex,
       getLastPosition: this._getLastPosition,

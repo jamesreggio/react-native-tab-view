@@ -2,7 +2,7 @@
 
 import React, { PureComponent, Children } from 'react';
 import PropTypes from 'prop-types';
-import { Platform, View, ScrollView, StyleSheet } from 'react-native';
+import { Platform, Animated, View, ScrollView, StyleSheet } from 'react-native';
 import { SceneRendererPropType } from './TabViewPropTypes';
 import type { SceneRendererProps, Route } from './TabViewTypeDefinitions';
 
@@ -73,10 +73,12 @@ export default class TabViewPagerScroll<T: Route<*>>
 
   componentWillUnmount() {
     this._resetListener.remove();
+    this._detachNativeEvent && this._detachNativeEvent.detach();
   }
 
   _resetListener: Object;
   _scrollView: Object;
+  _detachNativeEvent: Object;
   _nextOffset = 0;
   _isIdle: boolean = true;
 
@@ -101,12 +103,20 @@ export default class TabViewPagerScroll<T: Route<*>>
 
   _handleScroll = (e: ScrollEvent) => {
     this._isIdle = e.nativeEvent.contentOffset.x === this._nextOffset;
-    this.props.position.setValue(
-      e.nativeEvent.contentOffset.x / this.props.layout.width,
-    );
   };
 
-  _setRef = (el: Object) => (this._scrollView = el);
+  _setRef = (el: Object) => {
+    this._scrollView = el;
+
+    if (this._scrollView) {
+      this._detachNativeEvent && this._detachNativeEvent.detach();
+      this._detachNativeEvent = Animated.attachNativeEvent(
+        this._scrollView.getScrollableNode(),
+        'onScroll',
+        [{nativeEvent: {contentOffset: {x: this.props.offsetX}}}],
+      );
+    }
+  };
 
   render() {
     const { children, layout, navigationState } = this.props;
