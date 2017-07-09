@@ -92,15 +92,12 @@ export default class TabViewAnimated<T: Route<*>> extends React.Component<
     };
 
     const panX = new Animated.Value(0);
-    const offsetX = new Animated.Value(-navigationState.index * layout.width);
+    const offsetX = new Animated.Value(navigationState.index * layout.width);
     const layoutXY = new Animated.ValueXY({
       x: layout.width || 0.001,
       y: layout.height || 0.001,
     });
-    const position = Animated.multiply(
-      Animated.divide(Animated.add(panX, offsetX), layoutXY.x),
-      -1
-    );
+    const position = Animated.divide(Animated.add(panX, offsetX), layoutXY.x);
 
     this.state = {
       loaded: [navigationState.index],
@@ -156,9 +153,9 @@ export default class TabViewAnimated<T: Route<*>> extends React.Component<
     const offsetX =
       typeof this._lastOffsetX === 'number'
         ? this._lastOffsetX
-        : -navigationState.index * layout.width;
+        : navigationState.index * layout.width;
 
-    return (panX + offsetX) / -(layout.width || 0.001);
+    return (panX + offsetX) / (layout.width || 0.001);
   };
 
   _renderScene = (props: SceneRendererProps<T> & Scene<T>) => {
@@ -204,7 +201,7 @@ export default class TabViewAnimated<T: Route<*>> extends React.Component<
       return;
     }
 
-    this.state.offsetX.setValue(-this.props.navigationState.index * width);
+    this.state.offsetX.setValue(this.props.navigationState.index * width);
     this.state.layoutXY.setValue({ x: width, y: height });
     this.setState({
       layout: {

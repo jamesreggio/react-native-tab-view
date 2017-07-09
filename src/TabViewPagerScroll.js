@@ -1,7 +1,7 @@
 /* @flow */
 
 import * as React from 'react';
-import { View, ScrollView, StyleSheet, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, Platform, Animated } from 'react-native';
 import { PagerRendererPropType } from './TabViewPropTypes';
 import type { PagerRendererProps, Route } from './TabViewTypeDefinitions';
 
@@ -62,6 +62,10 @@ export default class TabViewPagerScroll<T: Route<*>> extends React.Component<
   }
 
   componentDidUpdate(prevProps: Props<T>) {
+    if (prevProps.useNativeDriver !== this.props.useNativeDriver) {
+      this._attachNativeEvent();
+    }
+
     if (
       prevProps.navigationState !== this.props.navigationState ||
       prevProps.layout !== this.props.layout
@@ -74,10 +78,12 @@ export default class TabViewPagerScroll<T: Route<*>> extends React.Component<
 
   componentWillUnmount() {
     this._resetListener && this._resetListener.remove();
+    this._detachNativeEvent && this._detachNativeEvent.detach();
   }
 
   _scrollView: ?ScrollView;
   _resetListener: Object;
+  _detachNativeEvent: Object;
   _currentOffset: ?number;
   _isIdle: boolean = true;
   _isFirst: boolean = Platform.OS === 'ios';
@@ -87,8 +93,9 @@ export default class TabViewPagerScroll<T: Route<*>> extends React.Component<
       return;
     }
 
-    this.props.offsetX.setValue(-x);
-    this.props.panX.setValue(0);
+    if (!this.props.useNativeDriver) {
+      this.props.offsetX.setValue(x);
+    }
 
     if (x !== this._currentOffset && this._scrollView) {
       this._scrollView.scrollTo({
@@ -116,13 +123,29 @@ export default class TabViewPagerScroll<T: Route<*>> extends React.Component<
       return;
     }
 
-    const { navigationState, layout } = this.props;
-    const offset = navigationState.index * layout.width;
-
-    this.props.panX.setValue(offset - e.nativeEvent.contentOffset.x);
+    if (!this.props.useNativeDriver) {
+      this.props.offsetX.setValue(e.nativeEvent.contentOffset.x);
+    }
 
     this._isIdle = false;
     this._currentOffset = e.nativeEvent.contentOffset.x;
+  };
+
+  _attachNativeEvent = () => {
+    this._detachNativeEvent && this._detachNativeEvent.detach();
+
+    if (this._scrollView && this.props.useNativeDriver) {
+      this._detachNativeEvent = Animated.attachNativeEvent(
+        this._scrollView.getScrollableNode(),
+        'onScroll',
+        [{nativeEvent: {contentOffset: {x: this.props.offsetX}}}],
+      );
+    }
+  };
+
+  _setRef = (el: Object) => {
+    this._scrollView = el;
+    this._attachNativeEvent();
   };
 
   render() {
@@ -148,7 +171,7 @@ export default class TabViewPagerScroll<T: Route<*>> extends React.Component<
         contentOffset={this.state.initialOffset}
         style={styles.container}
         contentContainerStyle={layout.width ? null : styles.container}
-        ref={el => (this._scrollView = el)}
+        ref={this._setRef}
       >
         {React.Children.map(children, (child, i) => (
           <View
