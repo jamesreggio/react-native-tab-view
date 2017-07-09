@@ -107,6 +107,9 @@ export default class TabViewAnimated<T: Route<*>>
 
   componentDidMount() {
     this._mounted = true;
+    this._positionListener = this.state.position.addListener(
+      this._trackPosition,
+    );
   }
 
   componentWillUnmount() {
@@ -185,6 +188,11 @@ export default class TabViewAnimated<T: Route<*>>
       e.nativeEvent.layout
     );
 
+    this.state.position.removeListener(this._positionListener);
+    this._positionListener = position.addListener(
+      this._trackPosition,
+    );
+
     this.setState({
       layout: {
         measured: true,
@@ -201,13 +209,6 @@ export default class TabViewAnimated<T: Route<*>>
     const width = layout ? layout.width : 0;
     const offsetX = new Animated.Value(index * width);
     const position = Animated.divide(offsetX, width);
-
-    if (this.state.position) {
-      this.state.position.removeListener(this._positionListener);
-    }
-    this._positionListener = position.addListener(
-      this._trackPosition,
-    );
 
     return { offsetX, position };
   };
