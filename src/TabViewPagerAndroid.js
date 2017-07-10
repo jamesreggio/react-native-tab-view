@@ -1,7 +1,7 @@
 /* @flow */
 
 import * as React from 'react';
-import { View, ViewPagerAndroid, StyleSheet, I18nManager } from 'react-native';
+import { Animated, View, ViewPagerAndroid, StyleSheet, I18nManager } from 'react-native';
 import { PagerRendererPropType } from './TabViewPropTypes';
 import type { PagerRendererProps, Route } from './TabViewTypeDefinitions';
 
@@ -61,7 +61,11 @@ export default class TabViewPagerAndroid<T: Route<*>> extends React.Component<
     }
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps: Props<T>) {
+    if (prevProps.useNativeDriver !== this.props.useNativeDriver) {
+      this._attachNativeEvent();
+    }
+
     this._handlePageChange(this.props.navigationState.index);
   }
 
@@ -69,6 +73,7 @@ export default class TabViewPagerAndroid<T: Route<*>> extends React.Component<
     this._resetListener.remove();
   }
 
+  _detachNativeEvent: Object;
   _animationFrameCallback: ?() => void;
   _isRequestingAnimationFrame: boolean = false;
   _resetListener: Object;
@@ -103,16 +108,9 @@ export default class TabViewPagerAndroid<T: Route<*>> extends React.Component<
   };
 
   _handlePageScroll = (e: PageScrollEvent) => {
-    this.props.offsetX.setValue(
-      e.nativeEvent.position *
-        this.props.layout.width *
-        (I18nManager.isRTL ? 1 : -1)
-    );
-    this.props.panX.setValue(
-      e.nativeEvent.offset *
-        this.props.layout.width *
-        (I18nManager.isRTL ? 1 : -1)
-    );
+    if (!this.props.useNativeDriver) {
+      this.props.panX.setValue(e.nativeEvent.position);
+    }
   };
 
   _handlePageScrollStateChanged = (e: PageScrollState) => {
@@ -125,7 +123,22 @@ export default class TabViewPagerAndroid<T: Route<*>> extends React.Component<
     this._currentIndex = index;
   };
 
-  _setRef = (el: ?ViewPagerAndroid) => (this._viewPager = el);
+  _attachNativeEvent = () => {
+    this._detachNativeEvent && this._detachNativeEvent.detach();
+
+    if (this._viewPager && this.props.useNativeDriver) {
+      this._detachNativeEvent = Animated.attachNativeEvent(
+        this._viewPager,
+        'onPageScroll',
+        [{nativeEvent: {position: this.props.panX}}],
+      );
+    }
+  };
+
+  _setRef = (el: Object) => {
+    this._viewPager = el;
+    this._attachNativeEvent();
+  };
 
   render() {
     const { children, navigationState, swipeEnabled } = this.props;
