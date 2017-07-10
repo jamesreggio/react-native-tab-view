@@ -20,6 +20,7 @@ type State = {
 };
 
 type Props<T> = SceneRendererProps<T> & {
+  useNativeDriver?: boolean,
   animationEnabled?: boolean,
   swipeEnabled?: boolean,
   children?: React.Element<any>,
@@ -29,6 +30,7 @@ export default class TabViewPagerScroll<T: Route<*>>
   extends PureComponent<void, Props<T>, State> {
   static propTypes = {
     ...SceneRendererPropType,
+    useNativeDriver: PropTypes.bool,
     animationEnabled: PropTypes.bool,
     swipeEnabled: PropTypes.bool,
     children: PropTypes.node,
@@ -55,6 +57,10 @@ export default class TabViewPagerScroll<T: Route<*>>
   }
 
   componentDidUpdate(prevProps: Props<T>) {
+    if (prevProps.useNativeDriver !== this.props.useNativeDriver) {
+      this._attachNativeEvent();
+    }
+
     const amount = this.props.navigationState.index * this.props.layout.width;
     if (
       prevProps.navigationState !== this.props.navigationState ||
@@ -76,9 +82,9 @@ export default class TabViewPagerScroll<T: Route<*>>
     this._detachNativeEvent && this._detachNativeEvent.detach();
   }
 
+  _detachNativeEvent: Object;
   _resetListener: Object;
   _scrollView: Object;
-  _detachNativeEvent: Object;
   _nextOffset = 0;
   _isIdle: boolean = true;
 
@@ -103,19 +109,27 @@ export default class TabViewPagerScroll<T: Route<*>>
 
   _handleScroll = (e: ScrollEvent) => {
     this._isIdle = e.nativeEvent.contentOffset.x === this._nextOffset;
+
+    if (!this.props.useNativeDriver) {
+      this.props.offsetX.setValue(e.nativeEvent.contentOffset.x);
+    }
   };
 
-  _setRef = (el: Object) => {
-    this._scrollView = el;
+  _attachNativeEvent = () => {
+    this._detachNativeEvent && this._detachNativeEvent.detach();
 
-    if (this._scrollView) {
-      this._detachNativeEvent && this._detachNativeEvent.detach();
+    if (this._scrollView && this.props.useNativeDriver) {
       this._detachNativeEvent = Animated.attachNativeEvent(
         this._scrollView.getScrollableNode(),
         'onScroll',
         [{nativeEvent: {contentOffset: {x: this.props.offsetX}}}],
       );
     }
+  };
+
+  _setRef = (el: Object) => {
+    this._scrollView = el;
+    this._attachNativeEvent();
   };
 
   render() {
