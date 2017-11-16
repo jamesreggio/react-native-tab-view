@@ -14,9 +14,6 @@ module.exports = {
   get TabViewPagerAndroid() {
     return require('./TabViewPagerAndroid').default;
   },
-  get TabViewPagerExperimental() {
-    return require('./TabViewPagerExperimental').default;
-  },
   get TabBar() {
     return require('./TabBar').default;
   },
