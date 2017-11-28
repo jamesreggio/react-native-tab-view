@@ -85,6 +85,7 @@ export default class TabViewPagerScroll<T: Route<*>> extends React.Component<
   _resetListener: Object;
   _detachNativeEvent: Object;
   _currentOffset: ?number;
+  _targetOffset: ?number;
   _isIdle: boolean = true;
   _isFirst: boolean = Platform.OS === 'ios';
 
@@ -98,6 +99,7 @@ export default class TabViewPagerScroll<T: Route<*>> extends React.Component<
     }
 
     if (x !== this._currentOffset && this._scrollView) {
+      this._targetOffset = x;
       this._scrollView.scrollTo({
         x,
         animated,
@@ -123,12 +125,14 @@ export default class TabViewPagerScroll<T: Route<*>> extends React.Component<
       return;
     }
 
+    const { x } = e.nativeEvent.contentOffset;
+
     if (!this.props.useNativeDriver) {
-      this.props.offsetX.setValue(e.nativeEvent.contentOffset.x);
+      this.props.offsetX.setValue(x);
     }
 
-    this._isIdle = false;
-    this._currentOffset = e.nativeEvent.contentOffset.x;
+    this._isIdle = (x === this._targetOffset);
+    this._currentOffset = x;
   };
 
   _attachNativeEvent = () => {
