@@ -205,7 +205,7 @@ export default class TabViewAnimated<T: Route<*>> extends React.Component<
     }
 
     this.state.offsetX.setValue(-this.props.navigationState.index * width);
-    this.state.layoutXY.setValue({ x: width, y: height });
+    this.state.layoutXY.setValue({ x: width || 0.001, y: height || 0.001 });
     this.setState({
       layout: {
         measured: true,
