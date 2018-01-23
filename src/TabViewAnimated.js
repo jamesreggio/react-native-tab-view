@@ -27,6 +27,7 @@ type Props<T> = PagerProps & {
   renderFooter?: (props: SceneRendererProps<T>) => ?React.Element<any>,
   useNativeDriver?: boolean,
   lazy?: boolean,
+  pointerEvents?: any,
   style?: Style,
 };
 
@@ -286,6 +287,7 @@ export default class TabViewAnimated<T: Route<*>> extends React.Component<
       <View
         onLayout={this._handleLayout}
         loaded={this.state.loaded}
+        pointerEvents={this.props.pointerEvents}
         style={[styles.container, this.props.style]}
       >
         {renderHeader && renderHeader(props)}
