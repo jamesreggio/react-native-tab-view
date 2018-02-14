@@ -1,9 +1,12 @@
 /* @flow */
 
 import * as React from 'react';
-import { View, ScrollView, StyleSheet, Platform, Animated } from 'react-native';
+import { View, StyleSheet, Platform, Animated } from 'react-native';
 import { PagerRendererPropType } from './TabViewPropTypes';
 import type { PagerRendererProps, Route } from './TabViewTypeDefinitions';
+
+import { ScrollView } from '../../../js/components/controls';
+import { callRef } from '../../../js/utils';
 
 type ScrollEvent = {
   nativeEvent: {
@@ -100,7 +103,7 @@ export default class TabViewPagerScroll<T: Route<*>> extends React.Component<
 
     if (x !== this._currentOffset && this._scrollView) {
       this._targetOffset = x;
-      this._scrollView.scrollTo({
+      callRef(this._scrollView, 'scrollTo', {
         x,
         animated,
       });
@@ -140,7 +143,7 @@ export default class TabViewPagerScroll<T: Route<*>> extends React.Component<
 
     if (this._scrollView && this.props.useNativeDriver) {
       this._detachNativeEvent = Animated.attachNativeEvent(
-        this._scrollView.getScrollableNode(),
+        callRef(this._scrollView, 'getScrollableNode'),
         'onScroll',
         [{nativeEvent: {contentOffset: {x: this.props.offsetX}}}],
       );
@@ -158,6 +161,8 @@ export default class TabViewPagerScroll<T: Route<*>> extends React.Component<
       <ScrollView
         horizontal
         pagingEnabled
+        nestingEnabled
+        removeClippedSubviews
         directionalLockEnabled
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="always"
